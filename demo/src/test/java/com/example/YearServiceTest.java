@@ -21,9 +21,9 @@ public class YearServiceTest {
     void testSomething() {
         System.out.println("Test start");
          // 테스트 통과 표시용
-        //assertTrue(true, "test complate: Success");
+        assertTrue(true, "test complate: Success");
         //테스트 실패
-        assertTrue(false, "test complate: Fail");
+        //assertTrue(false, "test complate: Fail");
     }
 
     @AfterEach

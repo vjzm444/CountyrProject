@@ -40,4 +40,9 @@ tasks.named('test') {
 
 test {
     useJUnitPlatform()
+	testLogging {
+        events "passed", "failed", "skipped"  // 성공/실패/스킵만 출력
+        exceptionFormat "full"                // 에러가 나면 전체 스택트레이스 출력
+        showStandardStreams = true            // System.out.println 출력 허용
+    }
 }
