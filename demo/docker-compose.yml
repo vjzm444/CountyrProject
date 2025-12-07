@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      target: builder  # 서비스용 빌드/실행은 bootRun 혹은 jar
+    container_name: holiday-api
+    ports:
+      - "8080:8080"  # 도커 컨테이너 포트 8080으로 맵핑
+    command: ./gradlew bootRun
+    environment:
+      SERVER_PORT: 8080  # 컨테이너 내부에서 주입
+      SPRING_PROFILES_ACTIVE: docker
+      
+  api-test:
+    build:
+      context: .
+      target: builder
+    container_name: holiday-api-test
+    command: ./gradlew clean test --no-daemon
+    depends_on:
+      - api

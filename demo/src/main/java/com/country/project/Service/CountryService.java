@@ -1,4 +1,4 @@
-package com.country.project.Service;
+package com.country.project.service;
 
 
 import org.slf4j.LoggerFactory;
@@ -34,35 +34,6 @@ public class CountryService {
         String listUrl = "https://date.nager.at/api/v3/AvailableCountries";
         ResponseEntity<Country[]> response = restTemplate.getForEntity(listUrl, Country[].class);
         return response.getBody();
-    }
-
-    @PostConstruct
-    public void init() {
-        String url = "https://date.nager.at/api/v3/PublicHolidays/2025/KR";
-        PublicHoliday[] holidays = restTemplate.getForObject(url, PublicHoliday[].class);
-
-        if (holidays != null) {
-            List<PublicHolidayEntity> entityList = new ArrayList<>();
-
-            for (PublicHoliday h : holidays) {
-                
-                PublicHolidayEntity e = new PublicHolidayEntity();
-
-                e.date = h.date;
-                e.localName = h.localName;
-                e.name = h.name;
-                e.countryCode = h.countryCode;
-                e.fixed = h.fixed;
-                e.global = h.global;
-                e.counties = h.counties;
-                e.launchYear = h.launchYear;
-
-                entityList.add(e);
-            }
-
-            repository.saveAll(entityList);
-            logger.info("✅ PublicHoliday data saved to H2, count: " + holidays.length);
-        }
     }
 
     // DB 조회

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.country.project.DemoApplication;
-import com.country.project.Initializer.DataInitializer;
+import com.country.project.initializer.DataInitializer;
 
 
 @SpringBootTest(classes = DemoApplication.class)
