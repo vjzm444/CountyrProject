@@ -1,24 +1,31 @@
-package com.country.project.model;
+package com.country.project.model.jsonModel;
 
 
 import lombok.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
+/**
+ * 휴일목록
+ * - Url에서 조회후 매핑 
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-//url에서조회후매핑
 public class PublicHoliday {
-    public String date;
+    public LocalDate date;
 
     public String localName;
     public String name;
     public String countryCode;
     public Boolean fixed;
     public Boolean global;
-    public String counties;
+    public List<String> counties;
     public Integer launchYear;
 }

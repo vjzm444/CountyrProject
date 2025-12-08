@@ -12,6 +12,8 @@ services:
     environment:
       SERVER_PORT: 8080  # 컨테이너 내부에서 주입
       SPRING_PROFILES_ACTIVE: docker
+    volumes:
+      - ./data:/app/data   # 호스트 ./data <-> 컨테이너 /app/data
       
   api-test:
     build:

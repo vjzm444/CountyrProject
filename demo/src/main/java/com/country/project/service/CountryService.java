@@ -3,52 +3,72 @@ package com.country.project.service;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import com.country.project.model.Country;
-import com.country.project.model.PublicHoliday;
+import com.country.project.config.CustomException;
+import com.country.project.config.ErrorCode;
+import com.country.project.model.CountryEntity;
 import com.country.project.model.PublicHolidayEntity;
-import com.country.project.repository.PublicHolidayRepository;
+import com.country.project.repository.CountryRepository;
+import com.country.project.repository.HolidayRepository;
 
-import jakarta.annotation.PostConstruct;
-
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 
 @Service
 public class CountryService {
 
     //로거
     private static final Logger logger = LoggerFactory.getLogger(CountryService.class);
-    //템플릿
-    private final RestTemplate restTemplate = new RestTemplate();
-
-     @Autowired
-    private PublicHolidayRepository repository;
     
-    //국가조회(작업중)
-    public Country[] getAvailableCountries() {
-        String listUrl = "https://date.nager.at/api/v3/AvailableCountries";
-        ResponseEntity<Country[]> response = restTemplate.getForEntity(listUrl, Country[].class);
-        return response.getBody();
-    }
+    @Autowired
+    private HolidayRepository holidayRepository;
+    @Autowired
+    private CountryRepository countryRepository;
+    
+    /**
+     * 국가조회
+     */
+    public List<CountryEntity> getAvailableCountries() {
+        List<CountryEntity> response = countryRepository.findAll();
 
-    // DB 조회
-    public PublicHoliday[] getAllHolidays(String year, String cuntry) {
-        return repository.findAll().toArray(new PublicHoliday[0]);
-    }
-
-    //쉬는날 조회
-    public List<PublicHolidayEntity> getPublicHolidays(String year, String country) {
-        List<PublicHolidayEntity> holidays = repository.findAll();
-
-        if (holidays != null && !holidays.isEmpty()) {
-            logger.info("PublicHoliday API called, number of items: {}", holidays.size());
+        if (response != null && !response.isEmpty()) {
+            logger.info("CountryEntity API called, number of items: {}", response.size());
         } else {
-            logger.warn("PublicHoliday API nodata");
+            logger.warn("CountryEntity API nodata");
+        }
+
+        return response;
+    }
+
+
+    /**
+     * 쉬는날 조회
+     * @param year
+     * @param country
+     * @return
+     */
+    public Page<PublicHolidayEntity> getPublicHolidays(String year, String country,int page) {
+        CountryEntity codeSheachResult = countryRepository.findByCountryCode(country);
+        //DB에 나라코드가 없음
+        if(codeSheachResult == null){
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+        int pageSize = 5;
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("date").ascending());
+        Page<PublicHolidayEntity> holidays = holidayRepository.findByHolidayYearAndCountry_CountryCode(year, country, pageable);
+
+        //로그만
+        if (holidays != null && !holidays.isEmpty()) {
+            //logger.info("PublicHoliday API called, number of items: {}", holidays.size());
+        } else {
+            logger.warn("PublicHoliday API no data");
         }
 
         return holidays;  // 배열 대신 List 반환

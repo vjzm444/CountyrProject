@@ -1,8 +1,12 @@
-package com.country.project.model;
+package com.country.project.model.jsonModel;
 
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
+/**
+ * 국가목록
+ * - Url에서 조회후 매핑 
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
 @Setter
@@ -11,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 @NoArgsConstructor
 public class Country {
 
-    private String countryCode;
+    public String countryCode;
 
-    private String name;
+    public String name;
 }

@@ -9,7 +9,10 @@ import org.springframework.stereotype.Repository;
 import com.country.project.model.*;
 
 @Repository
-public interface PublicHolidayRepository extends JpaRepository<PublicHolidayEntity, String> {
+public interface CountryRepository extends JpaRepository<CountryEntity, String> {
     
-    public List<PublicHolidayEntity> findAll();
+    //전체조회
+    public List<CountryEntity> findAll();
+    //나라코드로 조회
+    public CountryEntity findByCountryCode(String code);
 }
