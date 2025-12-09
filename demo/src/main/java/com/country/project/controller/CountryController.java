@@ -42,6 +42,7 @@ public class CountryController {
     }
 
     
+    
     @GetMapping("/holidays/{year}/{country}")
     @Operation(summary = "연도와 국가별 공휴일 조회", description = "이 API는 특정 연도와 국가의 공휴일 데이터를 반환합니다.")
     public Page<PublicHolidayEntity> getHolidays(
@@ -49,26 +50,34 @@ public class CountryController {
             @PathVariable("year") String year,
             @Parameter(description = "조회할 국가 코드(KR,JP,CN...)", example = "KR")
             @PathVariable("country") String country,
+            @Parameter(description = "조회할 월(선택, 1~12)", example = "3")
+            @RequestParam(value = "month", required = false) Integer month,
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
             @RequestParam(value = "page", defaultValue = "0") int page
         ) {
 
-        logger.info("year: {}, country: {}, page: {}", year, country, page);
+        logger.info("year: {}, month: {}, country: {}, page: {}", year, month, country, page);
 
         try {
             String[] recentYears = DataInitializer.RecentYear();
 
-            // 입력year값이 최근5년인지?
+            // year값이 최근5년인지?
             boolean isValidYear = Arrays.asList(recentYears).contains(year);
             if (!isValidYear) {
                 throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); //옳바르지 않은 파라미터
             }
 
+            // month 체크 1~12월사이인지?
+            if (month != null && (month < 1 || month > 12)) {
+                throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); // 올바르지 않은 파라미터
+            }
+            
             //DB 휴일조회
-            Page<PublicHolidayEntity> holidays = countryService.getPublicHolidays(year, country, page);
+            Page<PublicHolidayEntity> holidays = countryService.getPublicHolidays(year, month, country, page);
             
             return holidays;
         } catch (ResponseStatusException ex) {
+            logger.error("getHolidays Error :: "+ ex.getMessage());
            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }

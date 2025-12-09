@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.web.servlet.NoHandlerFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
@@ -46,6 +46,16 @@ public class GlobalExceptionHandler {
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
                 .body(new ErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR));
     }
-
+    
+    /*
+    * HTTP 404 Exception (존재하지 않는 URL 호출)
+    */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    protected ResponseEntity<ErrorResponse> handleNoHandlerFoundException(final NoHandlerFoundException e) {
+        logger.error("handleNoHandlerFoundException: {}", e.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.POSTS_NOT_FOUND.getStatus().value())
+                .body(new ErrorResponse(ErrorCode.POSTS_NOT_FOUND));
+    }
 
 }
