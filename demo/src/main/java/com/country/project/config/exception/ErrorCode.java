@@ -1,4 +1,4 @@
-package com.country.project.config;
+package com.country.project.config.exception;
 
 
 import org.springframework.http.HttpStatus;
@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 커스텀 에러코드 모음집
+ */
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
@@ -33,9 +36,15 @@ public enum ErrorCode {
      * 500 INTERNAL_SERVER_ERROR: 내부 서버 오류
      */
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "내부 서버 오류입니다."),
-
+    /*
+     * 415 UNSUPPORTED_MEDIA_TYPE: 파라미터 오류
+     */
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "파라메터 오류입니다."),
-
+    /*
+     * 401 UNAUTHORIZED: 인증 오류
+        -JwtAuthenticationEntryPoint 호출됨
+     */
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Authentication is required or the token is invalid")
 
     ;
 

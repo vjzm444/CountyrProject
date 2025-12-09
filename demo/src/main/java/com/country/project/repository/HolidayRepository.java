@@ -11,14 +11,19 @@ import org.springframework.stereotype.Repository;
 
 import com.country.project.model.*;
 
+/**
+ * 국가,년도,휴일목록
+ */
 @Repository
 public interface HolidayRepository extends JpaRepository<PublicHolidayEntity, Long> {
     
     //전체조회
     public List<PublicHolidayEntity> findAll();
 
-     // year와 countryCode로 조회
+    // year와 countryCode로 조회(페이징)
     Page<PublicHolidayEntity> findByHolidayYearAndCountry_CountryCode(String year, String countryCode, Pageable pageable);
+    // year와 countryCode로 조회
+    List<PublicHolidayEntity> findByHolidayYearAndCountry_CountryCode(String year, String countryCode);
     
     // 연도-월 + 국가 조회
     Page<PublicHolidayEntity> findByCountry_CountryCodeAndDateBetween(

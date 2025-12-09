@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.country.project.DemoApplication;
-import com.country.project.initializer.DataInitializer;
+import com.country.project.common.DateValidator;
 
 
 @SpringBootTest(classes = DemoApplication.class)
@@ -15,7 +15,7 @@ public class MyServiceTest {
     void testSomething() {
         System.out.println("Test start........");
         
-        String[] result = DataInitializer.RecentYear();
+        String[] result = DateValidator.recentYear();
         System.out.println("RecentYear result: " + String.join(", ", result));
 
         assertTrue(true, "myservice test complate: Success");

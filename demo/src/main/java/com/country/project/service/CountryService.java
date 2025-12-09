@@ -2,7 +2,11 @@ package com.country.project.service;
 
 
 import java.time.LocalDate;
+
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,25 +16,37 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import com.country.project.config.CustomException;
-import com.country.project.config.ErrorCode;
+import com.country.project.config.exception.CustomException;
+import com.country.project.config.exception.ErrorCode;
+import com.country.project.initializer.DataInitializer;
 import com.country.project.model.CountryEntity;
 import com.country.project.model.PublicHolidayEntity;
+import com.country.project.model.jsonModel.PublicHoliday;
 import com.country.project.repository.CountryRepository;
 import com.country.project.repository.HolidayRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class CountryService {
 
     //로거
     private static final Logger logger = LoggerFactory.getLogger(CountryService.class);
-    
+
+    private final RestTemplate restTemplate;
+
     @Autowired
     private HolidayRepository holidayRepository;
     @Autowired
     private CountryRepository countryRepository;
     
+    // 생성자
+    public CountryService() {
+        this.restTemplate = new RestTemplate();
+    }
+
     /**
      * 국가코드 조회
      */
@@ -48,7 +64,7 @@ public class CountryService {
 
 
     /**
-     * 쉬는날 조회
+     * 휴일날 조회
      * @param year
      * @param country
      * @return
@@ -70,9 +86,8 @@ public class CountryService {
             // 선택한 달의 시작일과 마지막일 계산
             LocalDate startDate = LocalDate.of(Integer.parseInt(year), month, 1);
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+            //logger.info("month: {}, startDate: {}, endDate: {}", month, startDate, endDate);
             
-            logger.info("month: {}, startDate: {}, endDate: {}", month, startDate, endDate);
-
             holidays = holidayRepository.findByCountry_CountryCodeAndDateBetween(country, startDate, endDate, pageable);
         } else {
             // month가 없으면 기존처럼 연도+국가 기준 조회
@@ -80,5 +95,197 @@ public class CountryService {
         }
 
         return holidays;
+    }
+
+    /**
+     * 해당년도인 국가의 휴일 삭제
+     */
+    @Transactional
+    public int deleteHolidays(String year, String country) {
+
+        //나라코드 존재확인
+        CountryEntity codeSheachResult = countryRepository.findByCountryCode(country);
+        if(codeSheachResult == null){
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+        
+        //조회
+        List<PublicHolidayEntity> holidays = holidayRepository.findByHolidayYearAndCountry_CountryCode(year, country);
+        //삭제 할 요소가 있는지?
+        if (holidays.isEmpty()) {
+            throw new CustomException(ErrorCode.POSTS_NOT_FOUND);
+        }
+        
+        //삭제
+        holidayRepository.deleteAll(holidays);
+        logger.info("delete holidays year: {}, country:{}, count: {}", year, country, holidays.size());
+        return holidays.size();
+    }
+
+    /**
+     * 특정 연도·국가 공휴일 데이터 재호출 후 Upsert
+     *  
+     * @param year 연도
+     * @param country 국가 코드
+     * @return 처리한 데이터 수
+     */
+    @Transactional
+    public List<PublicHolidayEntity> upsertPublicHolidays(String year, String country) {
+        
+        // 국가 존재 확인
+        CountryEntity countryEntity = countryRepository.findByCountryCode(country);
+        if (countryEntity == null) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+        
+        // Nager API 호출
+        String url = String.format("%s/%s/%s", DataInitializer.NAGER_HOLIDAY_URL, year, country);
+        PublicHoliday[] apiHolidays = restTemplate.getForObject(url, PublicHoliday[].class);
+        if (apiHolidays == null) {
+            logger.error("upsertPublicHolidays nager url is error :: {}", url);
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        // 기존 DB 데이터 조회
+        List<PublicHolidayEntity> dbHolidays = holidayRepository.findByHolidayYearAndCountry_CountryCode(year, country);
+
+        // DB에 데이터가 없으면, API 데이터로 전부 insert
+        if (dbHolidays.isEmpty()) {
+            List<PublicHolidayEntity> savedEntities = mapAndSaveHolidays(apiHolidays, year, countryEntity);
+            return savedEntities;    
+        }
+        
+        /* 1. Url조회값이 추가된것이 있다면, DB에 신규 휴일추가 */
+        if (apiHolidays.length > dbHolidays.size()) {
+            /**
+             * api에서 주는 Name은 절대 변하지 말아야하는 전제조건이 있어야함.
+             * - 해당로직은 만약 Name이 변하면, 같은날짜에 name이 다른 중복데이터가 생긴다.
+             * - key값이 마땅치않기에, Name이 변할시 Delete하고 다시 새로 insert를 고려해야함.
+             */
+
+            // DB에서 date+name 조합 확인
+            Set<String> existingDateName = dbHolidays.stream()
+                    .map(h -> h.getDate() + "|" + h.getName()) // "2025-12-25|Christmas"
+                    .collect(Collectors.toSet());
+
+            // 새로 추가할 데이터만 필터링
+            List<PublicHolidayEntity> newEntities = Arrays.stream(apiHolidays)
+                    .filter(h -> !existingDateName.contains(h.getDate() + "|" + h.getName())) // DB에 없는 조합만
+                    .map(h -> PublicHolidayEntity.builder()
+                            .date(h.getDate())
+                            .holidayYear(year)
+                            .country(countryEntity)
+                            .localName(h.getLocalName())
+                            .name(h.getName())
+                            .fixed(h.getFixed())
+                            .global(h.getGlobal())
+                            .counties(h.getCounties())
+                            .launchYear(h.getLaunchYear())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // url에 새로운 데이터가 있으면 DB에 insert
+            if (!newEntities.isEmpty()) {
+
+                logger.info("new Holiday (count={}):", newEntities.size());
+                newEntities.forEach(h -> logger.info("date={}, name={}", h.getDate(), h.getName()));
+
+                holidayRepository.saveAll(newEntities);
+                dbHolidays.addAll(newEntities); // 최종 반환용 리스트에 추가
+            } else {
+                logger.warn("new Holiday data not found..");
+            }
+
+        /* 2. Api값에서 DB에 있는 기존휴일이 사라짐 [DB요소 삭제] */
+        } else if (apiHolidays.length < dbHolidays.size()) {
+
+            // API에서 내려온 date+name 조합
+            Set<String> apiDateName = Arrays.stream(apiHolidays)
+                    .map(h -> h.getDate() + "|" + h.getName())
+                    .collect(Collectors.toSet());
+
+            // DB에서 API에 없는 date+name 조합 필터링
+            List<PublicHolidayEntity> toRemove = dbHolidays.stream()
+                    .filter(h -> !apiDateName.contains(h.getDate() + "|" + h.getName()))
+                    .collect(Collectors.toList());
+
+            if (!toRemove.isEmpty()) {
+                logger.info("DB Old Holiday to remove (count={}):", toRemove.size());
+                toRemove.forEach(h -> logger.info("date={}, name={}", h.getDate(), h.getName()));
+
+                holidayRepository.deleteAll(toRemove);
+                dbHolidays.removeAll(toRemove); // 반환용 리스트에서도 제거
+            }
+        
+        /* 3. 갯수가 같을경우, 변경점이 없는지 비교 */
+        } else {
+
+            logger.info("apiHolidays(count={}) == dbHolidays(count={})", apiHolidays.length, dbHolidays.size());
+            //apiHolidays.length == dbHolidays.size();
+
+            // DB에 존재하는 date|name Set 생성
+            Set<String> existingDateName = dbHolidays.stream()
+                    .map(h -> h.getDate() + "|" + h.getName())
+                    .collect(Collectors.toSet());
+
+            // API에서 조회한 휴일의 date|name Set 생성
+            Set<String> apiDateName = Arrays.stream(apiHolidays)
+                    .map(h -> h.getDate() + "|" + h.getName())
+                    .collect(Collectors.toSet());
+
+            /**
+             * 하나라도 일치하지 않으면, 전체 삭제 후 새로 insert
+             * - Key가 없음으로 데이터를 찾을수없기 때문.
+             */
+            if (!existingDateName.equals(apiDateName)) {
+                // year, country 조회된 데이터 전체 삭제(2025, KR)
+                holidayRepository.deleteAll(dbHolidays);
+
+                // 새 엔티티 생성 및 저장
+                List<PublicHolidayEntity> savedEntities = mapAndSaveHolidays(apiHolidays, year, countryEntity);
+                return savedEntities;
+            } else {
+                // Date+Name 모두 일치하면 기존 DB 그대로 반환
+                return dbHolidays;
+            }
+        }
+
+        
+        return dbHolidays;
+    }
+
+
+    /**
+     * DB저장
+     * @param apiHolidays
+     * @param year
+     * @param countryEntity
+     * @return
+     */
+    private List<PublicHolidayEntity> mapAndSaveHolidays(PublicHoliday[] apiHolidays, String year, CountryEntity countryEntity) {
+
+        // DB Model형태로 변경
+        List<PublicHolidayEntity> entities = Arrays.stream(apiHolidays)
+                .map(h -> {
+                    PublicHolidayEntity e = new PublicHolidayEntity();
+                    e.setDate(h.getDate());
+                    e.setLocalName(h.getLocalName());
+                    e.setName(h.getName());
+                    e.setFixed(h.getFixed());
+                    e.setGlobal(h.getGlobal());
+                    e.setCounties(h.getCounties());
+                    e.setLaunchYear(h.getLaunchYear());
+                    e.setHolidayYear(year);
+                    e.setCountry(countryEntity); // CountryEntity 매핑
+                    return e;
+                })
+                .collect(Collectors.toList());
+
+        holidayRepository.saveAll(entities);
+
+        logger.info("all new Holiday Data regist (count={}):", entities.size());
+        entities.forEach(h -> logger.info("date={}, name={}", h.getDate(), h.getName()));
+
+        return entities;
     }
 }

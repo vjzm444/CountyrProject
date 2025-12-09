@@ -1,14 +1,23 @@
-package com.country.project.config;
+package com.country.project.config.exception;
+
+import javax.naming.AuthenticationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+
 import lombok.extern.slf4j.Slf4j;
 
+
+/**
+ * 에러코드별 예외처리를 한다
+ * 
+ */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -56,6 +65,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.POSTS_NOT_FOUND.getStatus().value())
                 .body(new ErrorResponse(ErrorCode.POSTS_NOT_FOUND));
+    }
+    /*
+    * HTTP 401 Exception (인증 실패, 잘못된 토큰)
+    */
+    @ExceptionHandler(AuthenticationException.class)
+    protected ResponseEntity<ErrorResponse> handleAuthenticationException(final AuthenticationException e) {
+        logger.error("handleAuthenticationException: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED.value()) // 401
+                .body(new ErrorResponse(ErrorCode.UNAUTHORIZED)); // ErrorCode에 UNAUTHORIZED 추가 필요
     }
 
 }
