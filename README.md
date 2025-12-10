@@ -59,8 +59,8 @@ Gradlew|http://localhost/h2-console|
     
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `GET /countries` | X | O |
-#### - Response [ List<CountryEntity> ]
+| `GET /countries` | X | List<CountryEntity> |
+#### - Response
 ```
 [
   {
@@ -80,7 +80,7 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `GET /holidays/{year}/{country}` | O | O |
+| `GET /holidays/{year}/{country}` | O | Page<PublicHolidayEntity> |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
@@ -88,7 +88,7 @@ Gradlew|http://localhost/h2-console|
 | `country` | String | O | 국가 코드 | `KR` |
 | `month` | Integer | X | 조회할 월(옵션) | `1` |
 | `page` | Integer | X | 페이지 번호 | `0` |
-#### - Response [Page<PublicHolidayEntity>]
+#### - Response 
 ```
 {
     "content": [
@@ -149,13 +149,13 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `POST /upsert/{year}/{country}` | O | O |
+| `POST /upsert/{year}/{country}` | O | List<PublicHolidayEntity> |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
 | `year` | String | O | 년 | `2025` |
 | `country` | String | O | 국가 코드 | `KR` |
-#### - Response [List<PublicHolidayEntity>] (Paging되지않고, request로 조회된값 전체리턴)
+#### - Response (Paging되지않고, request로 조회된값 전체리턴)
 ```
 [
     {
@@ -189,13 +189,13 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `DELETE /holidays/{year}/{country}` | O | O |
+| `DELETE /holidays/{year}/{country}` | O | Map<String, Integer> |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
 | `year` | String | O | 년 | `2025` |
 | `country` | String | O | 국가 코드 | `KR` |
-#### - Response [Map<String, Integer>] (request로 검색된값의 삭제된수)
+#### - Response (request로 검색된값의 삭제된수)
 ```
 {
     "count": 15
