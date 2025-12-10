@@ -201,12 +201,16 @@ Gradlew|http://localhost/h2-console|
     "count": 15
 }
 ```
+
 ---
 
 
 
 ## ✔️  테스트 성공 캡쳐
 <img width="1189" height="463" alt="Holiday API Flow" src="https://github.com/user-attachments/assets/99ab63dc-09fa-4a97-a976-d8894c7e1422" />
+
+---
+
 ```
 docker-compose로 실행시 JUnit Test Log 확인: 
 docker logs holiday-api-test -f
@@ -214,7 +218,9 @@ docker logs holiday-api-test -f
 Gradle에서 JUnit Test 명령어:
  ./gradlew clean test
 ```
+
 ---
+
 ## ✔️ Swagger UI 노출  확인방법
 ### - 🔐 JWT 인증(필수)
 - `jwt Token을 설정하지 않으면, 인증이 실패합니다.`
