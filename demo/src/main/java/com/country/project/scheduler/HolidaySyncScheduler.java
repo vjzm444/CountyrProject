@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import com.country.project.common.DateValidator;
 import com.country.project.model.CountryEntity;
@@ -27,8 +26,6 @@ public class HolidaySyncScheduler {
     //로거
     private static final Logger logger = LoggerFactory.getLogger(HolidaySyncScheduler.class);
     
-    private final RestTemplate restTemplate;
-    
     //서비스
     @Autowired
     private CountryService countryService;
@@ -39,8 +36,6 @@ public class HolidaySyncScheduler {
     //생성자
     public HolidaySyncScheduler(CountryRepository _countryRepository) {
         this.countryRepository = _countryRepository;
-
-        this.restTemplate = new RestTemplate();
     }
 
     //1월 2일 동기화용 스케줄러 
@@ -72,7 +67,7 @@ public class HolidaySyncScheduler {
                 c -> c                // value
         ));
 
-        List<String> logMessages = new ArrayList<>();
+        //List<String> logMessages = new ArrayList<>();
         List<String> warninglogMessages = new ArrayList<>();
 
         //모든 국가코드만큼 반복
@@ -93,10 +88,10 @@ public class HolidaySyncScheduler {
             }
         }
 
-        // 정상 로그 먼저 출력
-        if (!logMessages.isEmpty()) {
-            logger.info("\n" + String.join("\n", logMessages));
-        }
+        // 정상 로그 출력
+        //if (!logMessages.isEmpty()) {
+            //logger.info("\n" + String.join("\n", logMessages));
+        //}
 
         // WARNING 로그 그 다음 출력
         if (!warninglogMessages.isEmpty()) {

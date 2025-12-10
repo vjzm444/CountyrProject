@@ -9,6 +9,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,20 +19,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.country.project.service.CountryService;
 import com.country.project.common.DateValidator;
 import com.country.project.config.exception.CustomException;
 import com.country.project.config.exception.ErrorCode;
 import com.country.project.model.CountryEntity;
 import com.country.project.model.PublicHolidayEntity;
+import com.country.project.service.CountryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 
 
 /**
@@ -76,13 +75,13 @@ public class CountryController {
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(value = "page", defaultValue = "0") int page) {
         logger.info("year: {}, month: {}, country: {}, page: {}", year, month, country, page);
 
-        try {
-            // 년,월이 올바른지?
-            boolean isValid = DateValidator.validateYearAndMonth(year, month);
-            if (!isValid) {
-                throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); //올바르지 않은 파라미터
-            }
-            
+        // 년,월이 올바른지?
+        boolean isValid = DateValidator.validateYearAndMonth(year, month);
+        if (!isValid) {
+            throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); //올바르지 않은 파라미터
+        }
+
+        try {    
             //DB 휴일조회
             Page<PublicHolidayEntity> holidays = countryService.getPublicHolidays(year, month, country, page);
             
@@ -95,13 +94,13 @@ public class CountryController {
 
     /**
      * 삭제
-     *  - 특정연도의 국가휴일 대상
+     *  - 특정연도의 국가 대상
      */
     @DeleteMapping("/holidays/{year}/{country}")
     public ResponseEntity<Map<String, Integer>> deleteHolidays(
             @Parameter(description = "삭제 할 연도(2020,2021,2022...)", example = "2025") @PathVariable("year") String year,
             @Parameter(description = "삭제 할 국가 코드(KR,JP,CN...)", example = "KR") @PathVariable("country") String country) {
-        // year이 올바른지?
+        // year값이 최근5년에 해당되는지?
         boolean isValid = DateValidator.validateYear(year);
         if (!isValid) {
             throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); //올바르지 않은 파라미터
@@ -117,7 +116,7 @@ public class CountryController {
 
     /**
      * 신규등록 or 덮어쓰기
-     * - 특정연도의 국가휴일 대상
+     * - 특정연도의 국가 대상
      * @param year
      * @param country
      * @return
@@ -127,15 +126,16 @@ public class CountryController {
     public List<PublicHolidayEntity> upsertHolidays(
             @Parameter(description = "연도", example = "2025") @PathVariable("year") String year,
             @Parameter(description = "국가 코드", example = "KR") @PathVariable("country") String country) {
-
-        try {
-            List<PublicHolidayEntity> result = countryService.upsertPublicHolidays(year, country);
-            // 날짜 기준 오름차순 정렬
-            result.sort(Comparator.comparing(PublicHolidayEntity::getDate));
-            return result;
-        } catch (CustomException ex) {
-            logger.error("upsertHolidays Error :: " + ex.getMessage());
-            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            
+        // year값이 최근5년에 해당되는지?
+        boolean isValid = DateValidator.validateYear(year);
+        if (!isValid) {
+            throw new CustomException(ErrorCode.UNSUPPORTED_MEDIA_TYPE); // 올바르지 않은 파라미터
         }
+
+        List<PublicHolidayEntity> result = countryService.upsertPublicHolidays(year, country);
+        // 날짜 기준 오름차순 정렬
+        result.sort(Comparator.comparing(PublicHolidayEntity::getDate));
+        return result;
     }
 }

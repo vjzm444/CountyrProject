@@ -2,7 +2,6 @@ package com.country.project.service;
 
 
 import java.time.LocalDate;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -166,11 +165,8 @@ public class CountryService {
             return savedEntities;    
         }
 
-
+        //Api결과와 db결과가 일치하는지 date|name로 비교확인.
         if (apiHolidays.length == dbHolidays.size()) {
-         
-            //logger.info("apiHolidays(count={}) == dbHolidays(count={})", apiHolidays.length, dbHolidays.size());
-            //apiHolidays.length == dbHolidays.size();
 
             // DB에 존재하는 date|name Set 생성
             Set<String> existingDateName = dbHolidays.stream()
@@ -199,8 +195,8 @@ public class CountryService {
             }
             
 
-        /* 1. Url조회값이 추가된것이 있다면, DB에 신규 휴일추가 (apiHolidays.length > dbHolidays.size())*/
-        /* 2. Api값에서 DB에 있는 기존휴일이 사라짐 [DB요소 삭제] (apiHolidays.length < dbHolidays.size())*/
+        /* 1. Url조회값이 추가된것이 있다면, DB에 신규 휴일추가 (apiHolidays.length > dbHolidays.size()) */
+        /* 2. Api값에서 DB에 있는 기존휴일이 사라짐 [DB요소 삭제] (apiHolidays.length < dbHolidays.size()) */
         } else {
             // API에서 내려온 date+name 조합
             Set<String> apiDateName = Arrays.stream(apiHolidays)
@@ -271,7 +267,7 @@ public class CountryService {
 
 
     /**
-     * 
+     * Url조회값이 추가된것이 있다면, DB에 신규 휴일추가
      */
     private List<PublicHolidayEntity> isNewEliment(PublicHoliday[] apiHolidays, List<PublicHolidayEntity> dbHolidays ,CountryEntity countryEntity, String year){
         // DB에서 date+name 조합 확인
@@ -295,7 +291,6 @@ public class CountryService {
                             .build())
                     .collect(Collectors.toList());
 
-            // url에 새로운 데이터가 있으면 DB에 insert
             return newEntities;
     }
 }

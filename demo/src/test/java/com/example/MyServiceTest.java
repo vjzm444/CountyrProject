@@ -1,11 +1,8 @@
 package com.example;
 
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +12,20 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.country.project.DemoApplication;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * 테스트 케이스
+ *  - 조회 => O
+ *  - 삭제 
+ *  - Upsert
+ */
 @SpringBootTest(classes = DemoApplication.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test") // test용 프로파일 사용
@@ -53,6 +58,8 @@ public class MyServiceTest {
     /**
      * 국가 공휴일조회
      *  - 성공 케이스
+     * 
+     *  jwt체크는 하지않는다
      */
     @Test
     @WithMockUser(username="testuser", roles={"USER"})
