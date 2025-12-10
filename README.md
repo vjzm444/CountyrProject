@@ -51,7 +51,7 @@ Gradlew|http://localhost/h2-console|
 
 ---
 
-## ✔️ REST API 명세
+## ✔️ REST API 명세(🔐 JWT 인증필수!! 맨 밑에 정보있음)
 
 
 ### - 1. 등록된 모든 국가 목록을 조회
