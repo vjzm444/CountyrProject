@@ -14,7 +14,12 @@ import lombok.*;
  *  -나라별 휴일
  */
 @Entity
-@Table(name = "holiday")
+@Table(
+    name = "holiday",
+    indexes = {
+        @Index(name = "idx_country_year", columnList = "country_code, holidayYear")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

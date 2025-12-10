@@ -106,10 +106,10 @@ public class DataInitializer {
                 c -> c.countryCode,   // key
                 c -> c                // value
         ));
+        
+        logger.info("Initializer start. Countrys Count: {}. Please wait. Processing.....",codes.length);
 
         for (String code : codes) {
-            logger.info("country start ::: " + code);
-
             for (String year : years) {
                 // API 요청 URL
                 
@@ -122,7 +122,7 @@ public class DataInitializer {
                     continue;
                 }
 
-                // 3PublicHoliday → Entity 매핑
+                // PublicHoliday → Entity 매핑
                 for (PublicHoliday h : holidays) {
                     CountryEntity country = countryMap.get(h.getCountryCode()); // country 매핑
 
@@ -148,7 +148,7 @@ public class DataInitializer {
         // 모든 반복이 끝난 뒤 DB에 한 번에 저장
         holidayRepository.saveAll(allEntities);
 
-        logger.info("Saved holidays: " + allEntities.size());
+        logger.info("Initializer End. Saved holidays: " + allEntities.size());
     }
 
 }

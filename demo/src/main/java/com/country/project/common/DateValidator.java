@@ -45,14 +45,22 @@ public class DateValidator {
 
     // 현재년도 기준 최근 5년을 리턴
     public static String[] recentYear() {
+        // null이면 내부에서 기본값 5 처리
+        return recentYear(null);
+    }
+
+    // 현재년도 기준 최근 5년을 리턴
+    public static String[] recentYear(Integer numberOfYears) {
         int currentYear = Year.now().getValue(); // 현재 연도 2025
-        int numberOfYears = 5; // 최근 5년 + 현재 연도
+    
+        // 최근 N년, 기본값 5
+        int n = (numberOfYears != null) ? numberOfYears : 5;
 
-        String[] years = new String[numberOfYears];
+        String[] years = new String[n];
 
-        int startYear = currentYear - (numberOfYears - 1); // 2020
-        for (int i = 0; i < numberOfYears; i++) {
-            years[i] = String.valueOf(startYear + i); // 2020, 2021, ..., 2025
+        int startYear = currentYear - (n - 1); // 5년이면 2021~2025
+        for (int i = 0; i < n; i++) {
+            years[i] = String.valueOf(startYear + i);
         }
         return years;
     }

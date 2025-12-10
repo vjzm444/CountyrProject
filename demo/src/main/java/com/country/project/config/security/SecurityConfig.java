@@ -14,7 +14,7 @@ import com.country.project.config.jwt.JwtAuthenticationFilter;
 import com.country.project.config.jwt.JwtTokenProvider;
 
 /**
- * 보안 설정
+ * 시큘리티 설정
  */
 @Configuration
 @EnableWebSecurity
@@ -46,17 +46,25 @@ public class SecurityConfig {
                 "/webjars/**",
                 "/v3/api-docs.yaml"
             ).permitAll()
-            .anyRequest().authenticated() // 나머지는 전부 JWT 인증 필요
+
+            // H2 콘솔 허용 (모든 경로)
+            .requestMatchers("/h2-console/**").permitAll()
+            .anyRequest().authenticated() // 나머지는 전부 JWT 인증
         )
 
+        // H2 콘솔은 frameOptions SAMEORIGIN 필요
+        .headers(headers -> headers
+            .frameOptions(frame -> frame.sameOrigin())
+        )
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
-
+        // jwt 처리
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtAuthenticationFilter),
             UsernamePasswordAuthenticationFilter.class
         );
+
 
         return http.build();
     }

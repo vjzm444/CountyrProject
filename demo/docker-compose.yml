@@ -14,7 +14,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     volumes:
       - ./data:/app/data   # 호스트 ./data <-> 컨테이너 /app/data
-      
+  
   api-test:
     build:
       context: .
@@ -23,3 +23,18 @@ services:
     command: ./gradlew clean test --no-daemon
     depends_on:
       - api
+
+  # KPI용으로 만들어놓음(db연결은 Grafana안에서 따로해야함)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: holiday-grafana
+    ports:
+      - "3000:3000"  # Grafana 접속 포트
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana-data:/var/lib/grafana  # Grafana 데이터 유지
+    depends_on:
+      - api
+      

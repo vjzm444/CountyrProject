@@ -7,17 +7,16 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.country.project.common.DateValidator;
-import com.country.project.initializer.DataInitializer;
 import com.country.project.model.CountryEntity;
 import com.country.project.model.PublicHolidayEntity;
-import com.country.project.model.jsonModel.PublicHoliday;
 import com.country.project.repository.CountryRepository;
-import com.country.project.repository.HolidayRepository;
+import com.country.project.service.CountryService;
 
 /**
  * 스케쥴러
@@ -30,37 +29,41 @@ public class HolidaySyncScheduler {
     
     private final RestTemplate restTemplate;
     
-    // 휴일 DB정보
-    private final HolidayRepository holidayRepository;
+    //서비스
+    @Autowired
+    private CountryService countryService;
+
     // 국가 DB정보
     private final CountryRepository countryRepository;
 
     //생성자
-    public HolidaySyncScheduler(HolidayRepository _holidayRepository, CountryRepository _countryRepository) {
-        this.holidayRepository = _holidayRepository;
+    public HolidaySyncScheduler(CountryRepository _countryRepository) {
         this.countryRepository = _countryRepository;
 
         this.restTemplate = new RestTemplate();
     }
 
-
-    //@Scheduled(cron = "0 0 1 2 1 *", zone = "Asia/Seoul") //1월 2일 동기화용 스케줄러 
-    @Scheduled(fixedRate = 5 * 60 * 1000) // 5분 = 5*60*1000 ms
+    //1월 2일 동기화용 스케줄러 
+    @Scheduled(cron = "0 0 1 2 1 ?", zone = "Asia/Seoul")
+    //@Scheduled(fixedRate = 5 * 60 * 1000) // 5분 = 5*60*1000 ms
     //@Scheduled(fixedRate = 60000) // 60,000ms = 1분
     public void syncHolidayLog() {
-        logger.info(">>> Holiday Sync Triggered! Time: {}", java.time.LocalDateTime.now());
+        logger.info(">>> Holiday Sync START Triggered! Time: {}", java.time.LocalDateTime.now());
+        resetCountryHoliday();
+        logger.info(">>> Holiday Sync END Triggered! Time: {}", java.time.LocalDateTime.now());
     }
 
 
     /**
-     * 국가별로 축일을 설정(작업중)
-     
-    public void addCountryHoliday(String[] codes) {
+     * 최근 2년, 국가별로 축일 재설정
+     *  - 리팩토링 있음.
+     *     ㄴ 메모리에 전부 쌓아놓은 다음, 마지막에 DB insert로 구현하는 방법.
+     */
+    public void resetCountryHoliday() {
 
-        //최근 5년
-        String[] years = DateValidator.recentYear();
-        List<PublicHolidayEntity> allEntities = new ArrayList<>();
-
+        //최근 2년
+        String[] years = DateValidator.recentYear(2);
+        
         // CountryEntity 전부 조회해서 Map으로 캐싱 (DB hit 최소화)
         Map<String, CountryEntity> countryMap = countryRepository.findAll()
         .stream()
@@ -69,48 +72,36 @@ public class HolidaySyncScheduler {
                 c -> c                // value
         ));
 
-        for (String code : codes) {
-            logger.info("country start ::: " + code);
+        List<String> logMessages = new ArrayList<>();
+        List<String> warninglogMessages = new ArrayList<>();
 
+        //모든 국가코드만큼 반복
+        for (String countryCode : countryMap.keySet()) {
+            //logger.info("Country ReSetting Start: " + countryCode);
+
+            //최근 2년치만
             for (String year : years) {
-                // API 요청 URL
-                
-                String url = String.format("%s/%s/%s", DataInitializer.NAGER_HOLIDAY_URL, year, code);
-                //logger.info("url ::: " + url);
 
-                PublicHoliday[] holidays = restTemplate.getForObject(url, PublicHoliday[].class);
+                List<PublicHolidayEntity> result = countryService.upsertPublicHolidays(year, countryCode);
 
-                if (holidays == null || holidays.length == 0) {
-                    continue;
+                //비엇으면 문제.
+                if(result.isEmpty()){
+                    warninglogMessages.add(String.format("[ERROR] resetCountryHoliday Scheduler count is null :: countryCode:%s, year:%s",countryCode, year));
+                }else{
+                    //logMessages.add(String.format("[SUCCESS] upsertPublicHolidays result :: countryCode:%s, year:%s,  size:%d",countryCode, year, result.size()));
                 }
-
-                // 3PublicHoliday → Entity 매핑
-                for (PublicHoliday h : holidays) {
-                    CountryEntity country = countryMap.get(h.getCountryCode()); // country 매핑
-
-                    PublicHolidayEntity e = PublicHolidayEntity.builder()
-                            .date(h.getDate())
-                            .holidayYear(year)
-                            .country(country)
-                            .localName(h.getLocalName())
-                            .name(h.getName())
-                            .fixed(h.getFixed())
-                            .global(h.getGlobal())
-                            .counties(h.getCounties())
-                            .launchYear(h.getLaunchYear())
-                            // .types(h.getTypes()) // 필요하면 추가
-                            .build();
-
-                    allEntities.add(e);
-                }
-
             }
         }
 
-        // 모든 반복이 끝난 뒤 DB에 한 번에 저장
-        holidayRepository.saveAll(allEntities);
+        // 정상 로그 먼저 출력
+        if (!logMessages.isEmpty()) {
+            logger.info("\n" + String.join("\n", logMessages));
+        }
 
-        logger.info("Saved holidays: " + allEntities.size());
+        // WARNING 로그 그 다음 출력
+        if (!warninglogMessages.isEmpty()) {
+            logger.warn("\n" + String.join("\n", warninglogMessages));
+        }
     }
-        */
+        
 }
