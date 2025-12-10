@@ -31,7 +31,7 @@ docker-compose up -d
     docker logs holiday-api -f
 ```
 - docker-compose up 시 Grafana가 함께 실행됩니다.
-필요 시 localhost:8080:3000에서 확인 가능합니다.
+필요 시 localhost:3000에서 확인 가능합니다.(로그인계정: admin / admin)
 현재는 구조만 마련되어 있으며, 국가별공 휴일 Total수 등을 시각화할 수 있도록 기본 베이스만 구성해두었습니다.
 #### - 접속 도메인
 
