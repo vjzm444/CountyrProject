@@ -59,7 +59,7 @@ Gradlew|http://localhost/h2-console|
     
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `GET /countries` | X | List<CountryEntity> |
+| `GET /countries` | X | `List<CountryEntity>` |
 #### - Response
 ```
 [
@@ -80,7 +80,7 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `GET /holidays/{year}/{country}` | O | Page<PublicHolidayEntity> |
+| `GET /holidays/{year}/{country}` | O | `Page<PublicHolidayEntity>` |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
@@ -149,7 +149,7 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `POST /upsert/{year}/{country}` | O | List<PublicHolidayEntity> |
+| `POST /upsert/{year}/{country}` | O | `List<PublicHolidayEntity>` |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
@@ -189,7 +189,7 @@ Gradlew|http://localhost/h2-console|
 
 | 엔드포인트 | Request | Response |
 |-----------|--------|------|
-| `DELETE /holidays/{year}/{country}` | O | Map<String, Integer> |
+| `DELETE /holidays/{year}/{country}` | O | `Map<String, Integer>` |
 #### - Request
 | 이름 | 타입 | 필수 | 설명 | 예시 |
 |------|-------|------|--------|---------|
